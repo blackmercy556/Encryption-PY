@@ -14,26 +14,23 @@ def initialize_database():
         )
     ''')
     
-    # Commit changes and close the connection
     conn.commit()
     conn.close()
 
+
 def select_statement():
-    conn = sqlite3.connect('key.db')  # Open or create the database file
+    conn = sqlite3.connect('key.db')
     c = conn.cursor()
     
-    # Create the table if it doesn't already exist
-    c.execute('''
-        SELECT * FROM file_keys
-    ''')
-
+    c.execute('SELECT * FROM file_keys')
     rows = c.fetchall()
 
     for row in rows:
         print(row)
     
-    return row
+    conn.close()
+    return rows  # Return all rows instead of just the last one
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": # Call this first to ensure the table exists
     select_statement()
