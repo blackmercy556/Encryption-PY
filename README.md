@@ -77,12 +77,9 @@ D = Decrypt
 - The file is decrypted using the key stored in the database
 - The file can be re-encrypted with a newly generated key
 
-Note: Encryption key deletion after decryption is currently not working as intended.
-
 ---
 
 ## Known Issues
-- Encryption keys are not properly deleted from the database after decryption
 - Key lifecycle management needs improvement
 
 ---
