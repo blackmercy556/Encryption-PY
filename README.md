@@ -35,8 +35,6 @@ Install the application in one of the following locations:
 
 Run the application from the directory containing the files you want to encrypt or decrypt.
 
-Example:
-
 
 ---
 
