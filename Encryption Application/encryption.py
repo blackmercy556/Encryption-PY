@@ -1,9 +1,8 @@
 import sqlite3
 from cryptography.fernet import Fernet
-from getpass import getpass
+import os
 
-
-def key_storage(e_file, key):
+def key_storage(e_file, key_bytes):
     conn = sqlite3.connect("key.db")
     cur = conn.cursor()
 
@@ -17,7 +16,7 @@ def key_storage(e_file, key):
 
     cur.execute('''
         INSERT OR REPLACE INTO file_keys (file_name, key) VALUES (?, ?)
-    ''', (e_file + ".encrypted", key.decode()))
+    ''', (e_file + ".encrypted", key_bytes.decode()))
     
     conn.commit()
     conn.close()
@@ -27,19 +26,34 @@ def key_decryption(e_file):
     conn = sqlite3.connect('key.db')
     c = conn.cursor()
     
-    c.execute('SELECT key FROM file_keys WHERE file_name = ?', (e_file + ".encrypted",))
+    c.execute('SELECT key FROM file_keys WHERE file_name = (?)', (e_file,))
     result = c.fetchone()
     conn.close()
 
     if result:
-        return result[0].encode()  # Convert from string back to bytes
+        return result[0]
+    return None
+
+def key_deletion(e_file):
+    conn = sqlite3.connect('key.db')
+    c = conn.cursor()
+    
+    c.execute('DELETE FROM file_keys WHERE file_name = (?)', (e_file,))
+    result = print(f"File key {e_file} has been removed from the Database")
+    conn.close()
+
+    if result:
+        return result
     return None
 
 
-def process_file(e_file, encrypt_decrypt, key):
+def process_file(e_file, encrypt_decrypt):
+     
     try:
         if encrypt_decrypt == "E":
-            cipher = Fernet(key)
+            file_key = Fernet.generate_key()
+            cipher = Fernet(file_key)
+
 
             with open(e_file, 'rb') as ef:
                 data = ef.read()
@@ -50,18 +64,14 @@ def process_file(e_file, encrypt_decrypt, key):
                 ef.write(edata)
 
             print(f"File encrypted and saved as {e_file}.encrypted")
-            key_storage(e_file, key)
+            key_storage(e_file, file_key)
 
         elif encrypt_decrypt == "D":
             key_from_db = key_decryption(e_file)
 
-            if key_from_db is None:
-                print(f"No key found for file '{e_file}'.")
-                return
+            cipher = Fernet(key_from_db.encode())
 
-            cipher = Fernet(key_from_db)
-
-            with open(e_file + ".encrypted", 'rb') as ef:
+            with open(e_file, 'rb') as ef:
                 edata = ef.read()
 
             data = cipher.decrypt(edata)
@@ -70,6 +80,7 @@ def process_file(e_file, encrypt_decrypt, key):
                 df.write(data)
 
             print(f"File decrypted and saved as {e_file}.decrypted")
+            key_deletion(e_file)
 
         else:
             print("Invalid choice. Please enter 'E' or 'D'.")
@@ -81,8 +92,7 @@ def process_file(e_file, encrypt_decrypt, key):
 
 
 def main():
-    key = Fernet.generate_key()
-    e_file = ""  # Initialize before using in the loop
+    e_file = ""
 
     while e_file.lower() != 'exit':
         e_file = input("What file do you want to encrypt/decrypt? Type 'exit' to escape: ")
@@ -96,7 +106,7 @@ def main():
             print("Invalid choice. Please enter 'E' for encryption or 'D' for decryption.")
             continue
 
-        process_file(e_file, encrypt_decrypt, key)
+        process_file(e_file, encrypt_decrypt)
     
 
 if __name__ == "__main__":
