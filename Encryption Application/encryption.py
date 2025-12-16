@@ -38,13 +38,20 @@ def key_deletion(e_file):
     conn = sqlite3.connect('key.db')
     c = conn.cursor()
     
-    c.execute('DELETE FROM file_keys WHERE file_name = (?)', (e_file,))
-    result = print(f"File key {e_file} has been removed from the Database")
-    conn.close()
+    c.execute('SELECT id FROM file_keys WHERE file_name = (?)', (e_file,))
+    result = c.fetchone()
+    print(result[0])
 
     if result:
-        return result
-    return None
+        c.execute('DELETE FROM file_keys WHERE id = (?)', (result[0],))
+        conn.commit()
+        output = print(f"File key {e_file} has been removed from the Database")
+        conn.close()
+        return output
+    else:
+        output = print(f"Error: File name {e_file} cannot be found")
+        conn.close()
+        return output
 
 
 def process_file(e_file, encrypt_decrypt):
